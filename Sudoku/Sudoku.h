@@ -8,6 +8,7 @@ protected:
 	int** grid;
 public:
 	Sudoku(int size);
+	//~Sudoku();
 	int** getgrid();
 	int getsqs();
 	void shuffle();
@@ -18,5 +19,4 @@ public:
 	void delnums(int);
 	int sumline(int);
 	int sumcol(int);
-
 };

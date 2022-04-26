@@ -148,12 +148,10 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Sudoku.cpp" />
     <ClCompile Include="SudokuSolver.cpp" />
-    <ClCompile Include="Textbox.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sudoku.h" />
     <ClInclude Include="SudokuSolver.h" />
-    <ClInclude Include="Textbox.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

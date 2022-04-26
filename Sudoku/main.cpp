@@ -8,6 +8,7 @@ const float VIEW_HEIGHT = 600;
 const float SUDOKU_HEIGHT = 500;
 const float SMALL_LINE_WIDTH = 2;
 const float WIDE_LINE_WIDTH = 4;
+const float TYPING_INDICATOR_TIME = 0.5f;
 
 void ResizeView(const sf::RenderWindow& window, sf::View& view)
 {
@@ -16,7 +17,7 @@ void ResizeView(const sf::RenderWindow& window, sf::View& view)
     view.setCenter(VIEW_HEIGHT/2, VIEW_HEIGHT / 2);
 }
 
-void DisplaySudoku(sf::RenderWindow& window, sf::View view, Sudoku sudoku)
+void DisplaySudoku(sf::RenderWindow& window, sf::View view, Sudoku& sudoku)
 {
     int sqs = sudoku.getsqs();
     int size = sqs * sqs;
@@ -42,6 +43,19 @@ void DisplaySudoku(sf::RenderWindow& window, sf::View view, Sudoku sudoku)
     sf::Font font;
     font.loadFromFile("arial.ttf");
 
+    bool resetyping = false;
+    bool mousepressed = false;
+
+    if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+    {
+        mousepressed = true;
+        resetyping = true;
+        for (int i = 0; i < sudoku.typingsize; ++i)
+            sudoku.typingtext[i] = -1;
+        sudoku.typingnum = 0;
+        sudoku.typingind = 0;
+    }
+
     for (int ci = 0; ci < sqs; ++ci)
     {
         for (int cj = 0; cj < sqs; ++cj)
@@ -56,6 +70,12 @@ void DisplaySudoku(sf::RenderWindow& window, sf::View view, Sudoku sudoku)
 
                     window.draw(square);
 
+                    // get the current mouse position in the window
+                    sf::Vector2i pixelPos = sf::Mouse::getPosition(window);
+
+                    // convert it to world coordinates
+                    sf::Vector2f worldPos = window.mapPixelToCoords(pixelPos);
+
                     if (sudoku.getgrid()[ci * sqs + i][cj * sqs + j] != 0)
                     {
 
@@ -64,7 +84,7 @@ void DisplaySudoku(sf::RenderWindow& window, sf::View view, Sudoku sudoku)
                         number.setString(std::to_string(sudoku.getgrid()[ci * sqs + i][cj * sqs + j]));
                         number.setFont(font);
 
-                        number.setCharacterSize(40);
+                        number.setCharacterSize(360 / size);
 
                         sf::FloatRect numberRect = number.getLocalBounds();
                         number.setOrigin(numberRect.left + numberRect.width / 2.0f,
@@ -75,9 +95,61 @@ void DisplaySudoku(sf::RenderWindow& window, sf::View view, Sudoku sudoku)
 
                         window.draw(number);
                     }
+                    else if (worldPos.x >= square.getPosition().x && worldPos.x <= square.getPosition().x + SQUARE_WIDTH && worldPos.y >= square.getPosition().y && worldPos.y <= square.getPosition().y + SQUARE_WIDTH)
+                    {
+                        if (sf::Mouse::isButtonPressed(sf::Mouse::Left))
+                        {
+                            sudoku.UpdateTextbox(sqs * ci + i, sqs * cj + j);
+                            std::cout << sudoku << std::endl;
+                        }
+                        if (mousepressed)
+                            resetyping = false;
+                    }
+                    if (sqs * ci + i == sudoku.currenti && sqs * cj + j == sudoku.currentj)
+                    {
+                        sf::Text typingnumber;
+
+                        if (sudoku.typingnum != 0)
+                        {
+                            typingnumber.setString(std::to_string(sudoku.typingnum));
+                        }
+                        else
+                            typingnumber.setString("");
+                        typingnumber.setFont(font);
+
+                        typingnumber.setCharacterSize(360 / size);
+
+                        sf::FloatRect typingnumberRect = typingnumber.getLocalBounds();
+                        typingnumber.setOrigin(typingnumberRect.left + typingnumberRect.width / 2.0f,
+                            typingnumberRect.top + typingnumberRect.height / 2.0f);
+                        typingnumber.setPosition(square.getPosition() + square.getSize() / 2.f);
+
+                        typingnumber.setFillColor(sf::Color::Black);
+
+                        window.draw(typingnumber);
+
+                        if (sudoku.timetypind - 2 * TYPING_INDICATOR_TIME * int(sudoku.timetypind / (2 * TYPING_INDICATOR_TIME)) <= TYPING_INDICATOR_TIME)
+                        {
+                            sf::RectangleShape typingindicator;
+                            typingindicator.setFillColor(sf::Color::Black);
+                            typingindicator.setSize(sf::Vector2f(SQUARE_WIDTH * 0.03f, SQUARE_WIDTH * 0.75f));
+                            typingindicator.setOrigin(typingindicator.getSize()/2.f);
+                            typingindicator.setPosition(square.getPosition() + square.getSize() / 2.f + sf::Vector2f(std::min(typingnumberRect.width,0.85f*SQUARE_WIDTH/2),
+                                0));
+                            //field.setPosition(field.getPosition() - sf::Vector2f(SQUARE_WIDTH + 0.85f, SQUARE_WIDTH / 2.f));
+
+                            window.draw(typingindicator);
+                        }
+                    }
                 }
             }
         }
+    }
+
+    if (resetyping)
+    {
+        sudoku.UpdateTextbox(-1, -1);
+        std::cout << sudoku << std::endl;
     }
 
     window.setView(view);
@@ -107,6 +179,8 @@ int main()
     sf::View view(sf::Vector2f(200.f, VIEW_HEIGHT / 2), sf::Vector2f(300.f, VIEW_HEIGHT));
     ResizeView(window, view);
 
+    char playerInput;
+
     while (window.isOpen())
     {
         sf::Event event;
@@ -120,10 +194,24 @@ int main()
             case sf::Event::Resized:
                 ResizeView(window, view);
                 break;
+            case sf::Event::TextEntered:
+                {
+                if (S.currenti >= 0 && S.currenti < size && S.currentj >= 0 && S.currentj < size)
+                {
+                    playerInput = event.text.unicode;
+                    if (playerInput >= 48 && playerInput <= 57)
+                        S.IntKBInput(playerInput - 48);
+                    if (playerInput == 8)
+                        S.IntKBInput(-1);
+                    if (playerInput == 13)
+                        S.IntKBInput(10);
+                }
+                }
             }
         }
 
         DisplaySudoku(window, view, S);
+        S.Update();
     }
 
     return 0;

@@ -2,6 +2,24 @@
 #include "SudokuSolver.h"
 #include <iostream>
 
+int count_digit(int number) {
+    int count = 0;
+    while (number != 0) {
+        number = number / 10;
+        count++;
+    }
+    return count;
+}
+
+void DisplayArray(int* array, int size)
+{
+    for (int i = 0; i < size; ++i)
+    {
+        std::cout << array[i] << ' ';
+    }
+    std::cout << std::endl;
+}
+
 Sudoku::Sudoku(int sqs) {
     int i, j, k = 1;
     this->sqs = sqs;
@@ -19,35 +37,33 @@ Sudoku::Sudoku(int sqs) {
     bool dispallsol = false;
 
     SudokuSolver sudokusolver(this->grid, dispsteps, sqs);
-    const clock_t begin_time = clock();
     sudokusolver.CalculateSolution(-1, -1, 0);
-    std::cout << "The initial Sudoku:" << std::endl << std::endl;
-    std::cout << "Time : " << float(clock() - begin_time) / CLOCKS_PER_SEC << " s";
-    std::cout << std::endl << std::endl;
-    sudokusolver.DisplayGrid();
-    std::cout << std::endl << std::endl << std::endl;
 
-    /*{
-            {1, 2, 3, 4, 5, 6, 7, 8, 9},
-            {4, 5, 6, 7, 8, 9, 1, 2, 3},
-            {7, 8, 9, 1, 2, 3, 4, 5, 6},
-            {2, 3, 4, 5, 6, 7, 8, 9, 1},
-            {5, 6, 7, 8, 9, 1, 2, 3, 4},
-            {8, 9, 1, 2, 3, 4, 5, 6, 7},
-            {3, 4, 5, 6, 7, 8, 9, 1, 2},
-            {6, 7, 8, 9, 1, 2, 3, 4, 5},
-            {9, 1, 2, 3, 4, 5, 6, 7, 8}
-        }
-        */
+    typing = false;
+    currenti = -1;
+    currentj = -1;
+    typingsize = count_digit(size);
+    typingtext = new int[typingsize];
+    for (int i = 0; i < typingsize; ++i)
+        typingtext[i] = -1;
+    typingnum = 0;
+    typingind = 0;
 }
 
+//Sudoku::Sudoku(const Sudoku& S)
+//{
+//    grid = S.grid;
+//    size = S.size;
+//    sqs = S.sqs;
+//}
+//
 //Sudoku::~Sudoku()
 //{
 //    for (int i = 0; i < size; ++i)
 //        delete[]grid[i];
 //    delete[]grid;
 //}
-//Sudoku SudokuGen(int size) {
+
 int** Sudoku::getgrid() {
     return grid;
 }
@@ -192,3 +208,64 @@ void Sudoku::delnums(int dif) {
     std::cout << "Numbers deleted: " << f << std::endl;
     std::cout << "Non-zero numbers remaining: " << size * size - f << std::endl;
 };
+
+
+void Sudoku::UpdateTextbox(int i, int j)
+{
+    currenti = i;
+    currentj = j;
+    if (i < 0 || i >= size || j < 0 || j >= size)
+        typing = false;
+    else
+    {
+        typing = true;
+        begin_time = clock();
+    }
+}
+
+
+void Sudoku::IntKBInput(int k)
+{
+    if (k >= 0 && k <= 9)
+    {
+        if (typingind <= typingsize-1)
+        {
+            typingtext[typingind] = k;
+            typingind += 1;
+            typingnum *= 10;
+            typingnum += k;
+        }
+    }
+    else if (k == -1)
+    {
+        if (typingind >= 0)
+        {
+            typingind -= 1;
+            typingtext[typingind] = -1;
+            typingnum = typingnum / 10;
+        }
+    }
+    else if (k == 10)
+    {
+        if (typingnum >= 1 && typingnum <= size)
+        {
+            grid[currenti][currentj] = typingnum;
+            currenti = -1;
+            currentj = -1;
+        }
+        for (int i = 0; i < typingsize; ++i)
+            typingtext[i] = -1;
+        typingnum = 0;
+        typingind = 0;
+    }
+    DisplayArray(typingtext, typingsize);
+}
+
+
+void Sudoku::Update()
+{
+    timetypind = float(clock() - begin_time) / CLOCKS_PER_SEC;
+}
+
+
+
